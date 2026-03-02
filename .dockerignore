@@ -1,0 +1,16 @@
+.git
+  .env
+  __pycache__
+  *.pyc
+  *.pyo
+  *.pyd
+  .db
+  .ipynb_checkpoints
+  .vscode
+  .idea
+  dashboard.py
+  screenshot.ps1
+  diag_*.png
+  login_error_diagnostic.png
+  NIEMIECKI/login_error_diagnostic.png
+  bot do instalinga/login_error_diagnostic.png
