@@ -1,0 +1,5 @@
+Flask==3.0.0
+playwright==1.40.0
+python-dotenv==1.0.0
+customtkinter==5.2.1
+gunicorn
