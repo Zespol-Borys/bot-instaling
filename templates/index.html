@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Instaling Bot Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & base ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0a14;
+      --surface:   #12121e;
+      --panel:     #181828;
+      --border:    #252540;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --log-bg:    #0d0d1a;
+
+      --eng:       #3b82f6;
+      --eng-glow:  rgba(59,130,246,.35);
+      --eng-dark:  #1d4ed8;
+
+      --niem:      #f59e0b;
+      --niem-glow: rgba(245,158,11,.35);
+      --niem-dark: #b45309;
+
+      --green:     #22c55e;
+      --red:       #ef4444;
+      --radius:    14px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top navbar ────────────────────────────────────────────────── */
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky; top: 0; z-index: 99;
+    }
+    nav .logo {
+      font-size: 17px; font-weight: 700;
+      display: flex; align-items: center; gap: 10px;
+    }
+    nav .logo span { color: var(--eng); }
+    nav .clock {
+      font-size: 12px; color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Main grid ─────────────────────────────────────────────────── */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      padding: 28px 28px 28px;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* ── Bot panel card ────────────────────────────────────────────── */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: box-shadow .3s;
+    }
+    .panel.running-ang { box-shadow: 0 0 0 1px var(--eng), 0 0 30px var(--eng-glow); border-color: var(--eng); }
+    .panel.running-niem { box-shadow: 0 0 0 1px var(--niem), 0 0 30px var(--niem-glow); border-color: var(--niem); }
+
+    /* header */
+    .panel-head {
+      padding: 22px 24px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .panel-title {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .panel-title .flag { font-size: 28px; line-height: 1; }
+    .panel-title h2 { font-size: 20px; font-weight: 700; }
+    .panel-title h2.eng { color: var(--eng); }
+    .panel-title h2.niem { color: var(--niem); }
+    .status-badge {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 500;
+      padding: 4px 12px; border-radius: 99px;
+      background: rgba(255,255,255,.05);
+      color: var(--muted); transition: all .3s;
+    }
+    .status-badge .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--muted); transition: background .3s;
+    }
+    .status-badge.running { color: var(--green); background: rgba(34,197,94,.12); }
+    .status-badge.running .dot { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 1.5s infinite; }
+    .status-badge.stopped { color: var(--red); background: rgba(239,68,68,.10); }
+    .status-badge.stopped .dot { background: var(--red); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* controls */
+    .controls {
+      padding: 18px 24px;
+      display: flex; flex-direction: column; gap: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .browser-row {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .browser-row label { font-size: 12px; color: var(--muted); flex-shrink:0; }
+    .seg-btn-group { display: flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+    .seg-btn {
+      flex: 1; padding: 7px 14px; font-size: 12px; font-weight: 500;
+      cursor: pointer; background: transparent; color: var(--muted);
+      border: none; transition: all .2s;
+    }
+    .seg-btn:not(:last-child) { border-right: 1px solid var(--border); }
+    .seg-btn.active.eng { background: var(--eng); color: #fff; }
+    .seg-btn.active.niem { background: var(--niem); color: #fff; }
+    .seg-btn:not(.active):hover { background: rgba(255,255,255,.05); color: var(--text); }
+
+    .btn-row { display: flex; gap: 10px; }
+    .btn {
+      flex: 1; padding: 11px 0;
+      font-size: 13px; font-weight: 600;
+      border: none; border-radius: 10px;
+      cursor: pointer; display: flex; align-items: center;
+      justify-content: center; gap: 7px;
+      letter-spacing: .3px;
+      transition: opacity .2s, transform .1s, filter .2s;
+    }
+    .btn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn:active:not(:disabled) { transform: translateY(0); }
+    .btn:disabled { opacity: .35; cursor: not-allowed; }
+    .btn-start { background: var(--green); color: #fff; }
+    .btn-stop  { background: var(--red);   color: #fff; }
+
+    /* log area */
+    .log-header {
+      padding: 10px 24px 8px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .log-header span { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: .8px; text-transform: uppercase; }
+    .btn-clear {
+      font-size: 11px; padding: 3px 10px; border-radius: 6px;
+      background: rgba(255,255,255,.05); border: 1px solid var(--border);
+      color: var(--muted); cursor: pointer;
+      transition: background .2s, color .2s;
+    }
+    .btn-clear:hover { background: rgba(255,255,255,.1); color: var(--text); }
+
+    .log-box {
+      flex: 1;
+      font-family: 'Courier New', monospace;
+      font-size: 11.5px;
+      line-height: 1.7;
+      color: #94a3b8;
+      background: var(--log-bg);
+      overflow-y: auto;
+      padding: 14px 20px;
+      min-height: 280px;
+      max-height: 420px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .log-box::-webkit-scrollbar { width: 5px; }
+    .log-box::-webkit-scrollbar-track { background: transparent; }
+    .log-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+    .log-line { display: block; }
+    .log-line.info  { color: #94a3b8; }
+    .log-line.ok    { color: #4ade80; }
+    .log-line.warn  { color: #fbbf24; }
+    .log-line.err   { color: #f87171; }
+    .log-line.start { color: #60a5fa; font-weight: 600; }
+    .log-line.stop  { color: #f87171; font-weight: 600; }
+
+    /* footer */
+    footer {
+      text-align: center;
+      padding: 14px;
+      font-size: 11px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">⚡ Instaling <span>Bot Manager</span></div>
+  <div class="clock" id="clock">--:--:--</div>
+</nav>
+
+<main>
+  <!-- ── ANGIELSKI panel ─────────────────────────────────── -->
+  <div class="panel" id="panel-ang">
+    <div class="panel-head">
+      <div class="panel-title">
+        <span class="flag">🇬🇧</span>
+        <h2 class="eng">ANGIELSKI</h2>
+      </div>
+      <div class="status-badge" id="badge-ang">
+        <div class="dot"></div>
+        <span id="badge-text-ang">Ready</span>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="browser-row">
+        <label>Przeglądarka:</label>
+        <div class="seg-btn-group" id="seg-ang">
+          <button class="seg-btn active eng" onclick="selectBrowser('ang','Google Chrome',this)">Google Chrome</button>
+          <button class="seg-btn eng" onclick="selectBrowser('ang','DuckDuckGo',this)">DuckDuckGo</button>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-start" id="start-ang" onclick="startBot('ang')">▶ START</button>
+        <button class="btn btn-stop"  id="stop-ang"  onclick="stopBot('ang')" disabled>■ STOP</button>
+      </div>
+    </div>
+    <div class="log-header">
+      <span>Logi</span>
+      <button class="btn-clear" onclick="clearLog('ang')">🗑 Wyczyść</button>
+    </div>
+    <div class="log-box" id="log-ang"></div>
+  </div>
+
+  <!-- ── NIEMIECKI panel ─────────────────────────────────── -->
+  <div class="panel" id="panel-niem">
+    <div class="panel-head">
+      <div class="panel-title">
+        <span class="flag">🇩🇪</span>
+        <h2 class="niem">NIEMIECKI</h2>
+      </div>
+      <div class="status-badge" id="badge-niem">
+        <div class="dot"></div>
+        <span id="badge-text-niem">Ready</span>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="browser-row">
+        <label>Przeglądarka:</label>
+        <div class="seg-btn-group" id="seg-niem">
+          <button class="seg-btn active niem" onclick="selectBrowser('niem','Google Chrome',this)">Google Chrome</button>
+          <button class="seg-btn niem" onclick="selectBrowser('niem','DuckDuckGo',this)">DuckDuckGo</button>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-start" id="start-niem" onclick="startBot('niem')">▶ START</button>
+        <button class="btn btn-stop"  id="stop-niem"  onclick="stopBot('niem')" disabled>■ STOP</button>
+      </div>
+    </div>
+    <div class="log-header">
+      <span>Logi</span>
+      <button class="btn-clear" onclick="clearLog('niem')">🗑 Wyczyść</button>
+    </div>
+    <div class="log-box" id="log-niem"></div>
+  </div>
+</main>
+
+<footer>Instaling Bot Manager &nbsp;•&nbsp; oba boty działają niezależnie v osobnych wątkach</footer>
+
+<script>
+// ── Clock ────────────────────────────────────────────────────────────────────
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('pl-PL');
+}
+updateClock(); setInterval(updateClock, 1000);
+
+// ── State ────────────────────────────────────────────────────────────────────
+const browsers = { ang: 'Google Chrome', niem: 'Google Chrome' };
+const evtSrcs  = { ang: null, niem: null };
+
+// ── Browser selector ─────────────────────────────────────────────────────────
+function selectBrowser(bot, val, el) {
+  browsers[bot] = val;
+  document.querySelectorAll(`#seg-${bot} .seg-btn`).forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── Log helpers ──────────────────────────────────────────────────────────────
+function classifyLine(txt) {
+  const t = txt.toLowerCase();
+  if (t.includes('▶') || t.includes('uruchomiony')) return 'start';
+  if (t.includes('■') || t.includes('stop') || t.includes('zatrzym')) return 'stop';
+  if (t.includes('error') || t.includes('błąd') || t.includes('fail')) return 'err';
+  if (t.includes('ok') || t.includes('✅') || t.includes('kliknię') || t.includes('intercept')) return 'ok';
+  if (t.includes('wait') || t.includes('czeka') || t.includes('heartbeat')) return 'warn';
+  return 'info';
+}
+
+function appendLog(bot, text) {
+  if (text.startsWith(': ')) return; // SSE comment / heartbeat
+  const box = document.getElementById(`log-${bot}`);
+  const span = document.createElement('span');
+  span.className = `log-line ${classifyLine(text)}`;
+  span.textContent = text + '\n';
+  box.appendChild(span);
+  box.scrollTop = box.scrollHeight;
+}
+
+function clearLog(bot) {
+  document.getElementById(`log-${bot}`).innerHTML = '';
+}
+
+// ── Badge / panel state ───────────────────────────────────────────────────────
+function setStatus(bot, state) {
+  // state: 'ready' | 'running' | 'stopped'
+  const badge = document.getElementById(`badge-${bot}`);
+  const text  = document.getElementById(`badge-text-${bot}`);
+  const panel = document.getElementById(`panel-${bot}`);
+  badge.className = 'status-badge';
+  panel.classList.remove(`running-ang`, `running-niem`);
+
+  const labels = { ready:'Ready', running:'Działa', stopped:'Zatrzymany' };
+  text.textContent = labels[state] || state;
+
+  if (state === 'running') {
+    badge.classList.add('running');
+    panel.classList.add(`running-${bot}`);
+  } else if (state === 'stopped') {
+    badge.classList.add('stopped');
+  }
+}
+
+function setButtons(bot, isRunning) {
+  document.getElementById(`start-${bot}`).disabled  = isRunning;
+  document.getElementById(`stop-${bot}`).disabled   = !isRunning;
+  document.querySelectorAll(`#seg-${bot} .seg-btn`).forEach(b => b.disabled = isRunning);
+}
+
+// ── SSE stream ────────────────────────────────────────────────────────────────
+function subscribeSSE(bot) {
+  if (evtSrcs[bot]) { evtSrcs[bot].close(); }
+  const es = new EventSource(`/api/stream/${bot}`);
+  es.onmessage = e => appendLog(bot, e.data);
+  es.onerror   = () => {};
+  evtSrcs[bot] = es;
+}
+
+// ── API calls ─────────────────────────────────────────────────────────────────
+async function startBot(bot) {
+  subscribeSSE(bot);
+  const r = await fetch(`/api/start/${bot}`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({browser: browsers[bot]})
+  });
+  if (r.ok) {
+    setStatus(bot, 'running');
+    setButtons(bot, true);
+  }
+}
+
+async function stopBot(bot) {
+  await fetch(`/api/stop/${bot}`, { method: 'POST' });
+  setStatus(bot, 'stopped');
+  setButtons(bot, false);
+}
+
+// ── Init: sync current status from server ────────────────────────────────────
+(async () => {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    for (const [bot, info] of Object.entries(d)) {
+      if (info.running) {
+        setStatus(bot, 'running');
+        setButtons(bot, true);
+        subscribeSSE(bot);
+      }
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
